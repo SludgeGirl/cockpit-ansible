@@ -5,7 +5,9 @@
 
     "tools": {
         "index": {
-            "label": "Starter Kit"
+            "label": "Cockpit Ansible"
         }
-    }
+    },
+
+    "content-security-policy": "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/; worker-src 'self' blob:"
 }
