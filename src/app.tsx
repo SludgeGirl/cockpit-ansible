@@ -4,6 +4,7 @@ import { Grid, GridItem, Nav, NavItem, NavList, Page, PageSidebar } from '@patte
 
 import cockpit from 'cockpit';
 import { Editor } from './components/code-editor';
+import { Playbook } from './components/types';
 
 const _ = cockpit.gettext;
 
@@ -13,23 +14,25 @@ export const Application = () => {
 
     useEffect(() => {
         cockpit.spawn(["find", "/usr/share/ansible/playbooks", "-type", "f", "-name", "*.yaml"])
-            .then((output): Promise<Playbook>[] => {
-                return output.split("\n").filter((v) => v !== "").map(async (playbook_path): Promise<Playbook> => {
-                    const content = await cockpit.file(playbook_path).read();
-                    return {
-                        path: playbook_path,
-                        script_name: playbook_path.split("/").reverse()[0],
-                        content: content,
-                        output: "",
-                    };
-                });
-            }).then((plays) => {
-                Promise.all(plays).then((playbooks) => {
-                    playbooks.sort((a, b) => new Intl.Collator().compare(a.path, b.path));
-                    setCurrentPlaybook(playbooks[0] || null)
-                    setAnsiblePlaybooks(playbooks);
+                .then((output): Promise<Playbook>[] => {
+                    return output.split("\n").filter((v) => v !== "")
+                            .map(async (playbook_path): Promise<Playbook> => {
+                                const content = await cockpit.file(playbook_path).read();
+                                return {
+                                    path: playbook_path,
+                                    script_name: playbook_path.split("/").reverse()[0],
+                                    content,
+                                    output: "",
+                                };
+                            });
                 })
-            });
+                .then((plays) => {
+                    Promise.all(plays).then((playbooks) => {
+                        playbooks.sort((a, b) => new Intl.Collator().compare(a.path, b.path));
+                        setCurrentPlaybook(playbooks[0] || null);
+                        setAnsiblePlaybooks(playbooks);
+                    });
+                });
     }, [setAnsiblePlaybooks]);
 
     return (
@@ -42,20 +45,20 @@ export const Application = () => {
                             <Nav
                                 onSelect={
                                     (_event: React.FormEvent<HTMLInputElement>, result: { itemId: number | string }) => {
-                                        let matchedPlaybook = ansiblePlaybooks.filter((p) => p.path === result.itemId);
+                                        const matchedPlaybook = ansiblePlaybooks.filter((p) => p.path === result.itemId);
                                         if (matchedPlaybook[0]) {
                                             setCurrentPlaybook(matchedPlaybook[0]);
                                         }
                                     }
                                 }
                                 aria-label="Default global"
-                                ouiaId="DefaultNav">
+                                ouiaId="DefaultNav"
+                            >
                                 <NavList>
-                                    {ansiblePlaybooks.map((p) => <>
-                                        <NavItem preventDefault id={"nav-default-link-" + p.path} to={"#nav-default-link-" + p.path} itemId={p.path} isActive={currentPlaybook?.path === p.path}>
+                                    {ansiblePlaybooks.map((p) =>
+                                        <NavItem key={"nav-key-" + p.script_name} preventDefault id={"nav-default-link-" + p.path} to={"#nav-default-link-" + p.path} itemId={p.path} isActive={currentPlaybook?.path === p.path}>
                                             {p.script_name}
-                                        </NavItem>
-                                    </>)}
+                                        </NavItem>)}
                                 </NavList>
                             </Nav>
                         </GridItem>
