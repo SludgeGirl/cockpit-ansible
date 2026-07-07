@@ -13,25 +13,53 @@ export const Application = () => {
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>(null);
 
     useEffect(() => {
-        cockpit.spawn(["find", "/usr/share/ansible/playbooks", "-type", "f", "-name", "*.yaml"])
-                .then((output): Promise<Playbook>[] => {
-                    return output.split("\n").filter((v) => v !== "")
-                            .map(async (playbook_path): Promise<Playbook> => {
-                                const content = await cockpit.file(playbook_path).read();
-                                return {
-                                    path: playbook_path,
-                                    script_name: playbook_path.split("/").reverse()[0],
-                                    content,
-                                    output: "",
-                                };
-                            });
-                })
-                .then((plays) => {
-                    Promise.all(plays).then((playbooks) => {
-                        playbooks.sort((a, b) => new Intl.Collator().compare(a.path, b.path));
-                        setCurrentPlaybook(playbooks[0] || null);
-                        setAnsiblePlaybooks(playbooks);
+        const promises: Promise<Playbook[]>[] = [];
+        ["/usr/share/ansible/playbooks", "/var/lib/ansible/playbooks"].forEach(element => {
+            const promise = cockpit.spawn(["find", element, "-type", "f", "-name", "*.yaml"])
+                    .then((output): Promise<Playbook>[] => {
+                        return output.split("\n").filter((v) => v !== "")
+                                .map(async (playbook_path): Promise<Playbook> => {
+                                    const content = await cockpit.file(playbook_path).read();
+                                    return {
+                                        path: playbook_path,
+                                        script_name: playbook_path.split("/").reverse()[0],
+                                        content,
+                                        parent_playbook: null,
+                                        output: "",
+                                    };
+                                });
+                    })
+                    .then(async (plays) => {
+                        return Promise.all(plays).then((playbooks) => {
+                            return playbooks.sort((a, b) => new Intl.Collator().compare(a.path, b.path));
+                        });
                     });
+            promises.push(promise);
+        });
+
+        Promise.all(promises)
+                .then((playbooks) => {
+                    let parented_playbooks: Playbook[] = [];
+                    if (playbooks[1].length === 0) {
+                        parented_playbooks = playbooks[0];
+                    } else {
+                        playbooks[0].forEach((playbook) => {
+                            let found_playbook = false;
+                            playbooks[1].forEach((modified_playbook) => {
+                                console.log("playbook:", playbook, modified_playbook);
+                                if (playbook.script_name === modified_playbook.script_name) {
+                                    found_playbook = true;
+                                    modified_playbook.parent_playbook = playbook;
+                                    parented_playbooks.push(modified_playbook);
+                                }
+                            });
+                            if (!found_playbook) {
+                                parented_playbooks.push(playbook);
+                            }
+                        });
+                    }
+                    setCurrentPlaybook(parented_playbooks[0] || null);
+                    setAnsiblePlaybooks(parented_playbooks);
                 });
     }, [setAnsiblePlaybooks]);
 
@@ -57,7 +85,7 @@ export const Application = () => {
                                 <NavList>
                                     {ansiblePlaybooks.map((p) =>
                                         <NavItem key={"nav-key-" + p.script_name} preventDefault id={"nav-default-link-" + p.path} to={"#nav-default-link-" + p.path} itemId={p.path} isActive={currentPlaybook?.path === p.path}>
-                                            {p.script_name}
+                                            {p.script_name}{p.parent_playbook && " (Modified)"}
                                         </NavItem>)}
                                 </NavList>
                             </Nav>

@@ -66,7 +66,7 @@ export const Editor = ({ playbook }: { playbook: Playbook | null }) => {
 
     const onSaveContent = useCallback(async () => {
         if (playbook) {
-            cockpit.file(playbook.path, { superuser: "try" }).replace(editedContent)
+            cockpit.file("/var/lib/ansible/playbooks/" + playbook.script_name, { superuser: "try" }).replace(editedContent)
                     .then(tag => {
                         console.log(tag);
                     })
@@ -110,7 +110,7 @@ export const Editor = ({ playbook }: { playbook: Playbook | null }) => {
         <>
             <div style={runningOutput ? { display: "none" } : {}}>
                 <CodeEditor
-                    headerMainContent={playbook?.path || ""}
+                    headerMainContent={(playbook?.path || "") + ((playbook?.parent_playbook || "") && " (modified)")}
                     isLanguageLabelVisible
                     isDarkTheme={cockpitDarkMode}
                     customControls={controls}
