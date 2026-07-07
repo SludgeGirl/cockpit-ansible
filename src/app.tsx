@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardBody, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
 import { Grid, GridItem, Nav, NavItem, NavList, Page, PageSidebar } from '@patternfly/react-core';
 
@@ -12,7 +12,7 @@ export const Application = () => {
     const [ansiblePlaybooks, setAnsiblePlaybooks] = useState<Playbook[]>([]);
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>(null);
 
-    useEffect(() => {
+    const getPlaybooks = useCallback(() => {
         const promises: Promise<Playbook[]>[] = [];
         ["/usr/share/ansible/playbooks", "/var/lib/ansible/playbooks"].forEach(element => {
             const promise = cockpit.spawn(["find", element, "-type", "f", "-name", "*.yaml"])
@@ -58,10 +58,16 @@ export const Application = () => {
                             }
                         });
                     }
-                    setCurrentPlaybook(parented_playbooks[0] || null);
+                    if (!currentPlaybook) {
+                        setCurrentPlaybook(parented_playbooks[0] || null);
+                    }
                     setAnsiblePlaybooks(parented_playbooks);
                 });
-    }, [setAnsiblePlaybooks]);
+    }, [currentPlaybook]);
+
+    useEffect(() => {
+        getPlaybooks();
+    }, [getPlaybooks]);
 
     return (
         <Page sidebar={<PageSidebar isSidebarOpen={false} />}>
@@ -91,7 +97,7 @@ export const Application = () => {
                             </Nav>
                         </GridItem>
                         <GridItem span={10}>
-                            <Editor playbook={currentPlaybook} />
+                            <Editor playbook={currentPlaybook} update_playbooks={getPlaybooks} />
                         </GridItem>
                     </Grid>
                 </CardBody>
