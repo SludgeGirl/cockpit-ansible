@@ -168,7 +168,9 @@ export const Editor = ({ playbook, update_playbooks }: { playbook: Playbook | nu
             let content = editedContent;
             if (variables) {
                 const content_parts = content.split("\n");
-                content_parts.shift();
+                if (content_parts[0].includes("# saved_variables:")) {
+                    content_parts.shift();
+                }
                 content = "# saved_variables: " + JSON.stringify(variables) + "\n" + content_parts.join("\n");
                 playbook.content = content;
             }
