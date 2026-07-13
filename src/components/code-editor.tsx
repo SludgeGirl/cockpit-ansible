@@ -150,11 +150,14 @@ export const Editor = ({ playbook, update_playbooks }: { playbook: Playbook | nu
     const onExecuteCode = useCallback(() => {
         if (playbook) {
             setRunningOutput("");
-            const variables = JSON.stringify(runtimeVariables.map(item => {
-                return { [item.name]: item.value };
-            }).reduce((a, b) => {
-                return { ...a, ...b };
-            }));
+            let variables = JSON.stringify({});
+            if (runtimeVariables.length > 0) {
+                variables = JSON.stringify(runtimeVariables.map(item => {
+                    return { [item.name]: item.value };
+                }).reduce((a, b) => {
+                    return { ...a, ...b };
+                }));
+            }
             cockpit.spawn(["ansible-playbook", "--connection", "local", "--inventory", "127.0.0.1,", "--limit", "127.0.0.1", playbook.path, "--extra-vars", variables], { err: "message", superuser: "try" })
                     .stream((data: string) => setRunningOutput((oldOutput) => oldOutput + data))
                     // @ts-expect-error: bad original typing
