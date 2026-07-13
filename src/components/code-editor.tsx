@@ -231,7 +231,7 @@ export const Editor = ({ playbook, update_playbooks }: { playbook: Playbook | nu
                 icon={<SaveIcon />}
                 aria-label={_("Save playbook")}
                 tooltipProps={{ content: _("Save playbook") }}
-                onClick={() => onSaveContent}
+                onClick={() => onSaveContent()}
                 isVisible={playbook?.content !== ''}
             />
         </>
