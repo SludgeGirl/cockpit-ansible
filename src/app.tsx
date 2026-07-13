@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardBody, CardTitle } from "@patternfly/react-core/dist/esm/components/Card/index.js";
-import { Grid, GridItem, Nav, NavItem, NavList, Page, PageSidebar } from '@patternfly/react-core';
+import { EmptyState, EmptyStateBody, Grid, GridItem, Nav, NavItem, NavList, Page, PageSidebar, Title } from '@patternfly/react-core';
 
 import cockpit from 'cockpit';
+import { EmptyStatePanel } from "cockpit-components-empty-state";
 import { Editor } from './components/code-editor';
 import { Playbook } from './components/types';
+import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 const _ = cockpit.gettext;
 
 export const Application = () => {
-    const [ansiblePlaybooks, setAnsiblePlaybooks] = useState<Playbook[]>([]);
+    const [ansiblePlaybooks, setAnsiblePlaybooks] = useState<Playbook[] | null>(null);
     const [currentPlaybook, setCurrentPlaybook] = useState<Playbook | null>(null);
 
     const getPlaybooks = useCallback(() => {
@@ -68,6 +70,23 @@ export const Application = () => {
     useEffect(() => {
         getPlaybooks();
     }, [getPlaybooks]);
+
+    if (ansiblePlaybooks === null) {
+        return (<EmptyStatePanel title={_("Loading Playbooks")} loading />);
+    }
+
+    if (ansiblePlaybooks.length === 0) {
+        return (
+            <EmptyState icon={ExclamationCircleIcon}>
+                <Title headingLevel="h2" size="md">
+                    {_("No playbooks found")}
+                </Title>
+                <EmptyStateBody>
+                    {cockpit.format(_("Please add them under $0 or install a package that provides them"), "/var/lib/ansible/playbooks")}
+                </EmptyStateBody>
+            </EmptyState>
+        );
+    }
 
     return (
         <Page sidebar={<PageSidebar isSidebarOpen={false} />}>
