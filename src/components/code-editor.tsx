@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
 
 import cockpit from 'cockpit';
-import { CloseIcon, CodeIcon, PlayIcon, SaveIcon } from '@patternfly/react-icons';
+import { CloseIcon, CodeIcon, PlayIcon, SaveIcon, TimesIcon } from '@patternfly/react-icons';
 import { ActionGroup, Button, CodeBlock, CodeBlockAction, CodeBlockCode, Form, Grid, GridItem, Modal, ModalBody, ModalHeader, TextInput } from '@patternfly/react-core';
 import { Playbook } from './types';
 
@@ -72,7 +72,12 @@ const VariableFormPopup = ({ callback, existingVariables }: {callback: (variable
                                     />
                                 </GridItem>
                                 <GridItem span={2}>
-                                    remove
+                                    <Button
+                                        onClick={() => setVariables(variables.filter((_, i) => i !== index))}
+                                        variant="plain"
+                                        aria-label={_("Remove variable row")}
+                                        icon={<TimesIcon />}
+                                    />
                                 </GridItem>
                             </Grid>
                         );
